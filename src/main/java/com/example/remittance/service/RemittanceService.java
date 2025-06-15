@@ -10,14 +10,24 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-
+/*
+* 1.계좌정보 조회
+* 2.입금
+* */
 @Service
 @RequiredArgsConstructor
 public class RemittanceService {
     private final AccountRepository accountRepository;
     private final TransactionRepository transactionRepository;
 
-    //입금
+    //1. 계좌정보 조회
+    public Long getAccountBalance(String accountNumber) {
+        Account account = accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new RuntimeException("계좌 없음"));
+        return account.getBalance();
+    }
+
+    //2. 입금
     public void deposit(DepositRequest request) {
         Account account = accountRepository.findByAccountNumber(request.getAccountNumber())
                 .orElseThrow(() -> new RuntimeException("계좌를 찾을 수 없습니다."));
@@ -37,4 +47,5 @@ public class RemittanceService {
         transactionRepository.save(transaction);
         accountRepository.save(account); // 변경된 계좌 저장
     }
+
 }
