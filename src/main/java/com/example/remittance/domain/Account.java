@@ -22,10 +22,17 @@ public class Account {
     @Column(unique = true)
     private String accountNumber;
 
+    @Builder.Default
     private Long balance = 0L;
 
     // 출금 일일 한도 관련
+    @Builder.Default
     private Long dailyWithdrawnAmount = 0L;
 
     private LocalDate lastWithdrawnDate;
+
+    //입금
+    public void plusBalance(long l) {
+        this.balance += l;
+    }
 }
