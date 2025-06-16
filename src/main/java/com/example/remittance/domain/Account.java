@@ -34,4 +34,19 @@ public class Account {
     public void plusBalance(long l) {
         this.balance += l;
     }
+
+    //출금
+    public void minusBalance(long bal, long amnt) {
+        balance = bal - amnt;
+    }
+
+    //출금일 한도 저장
+    public void saveDailyWithdrawnAmount(long l) {
+        this.dailyWithdrawnAmount = l;
+    }
+
+    //출금인 날짜 저장
+    public void saveLastWithdrawnDate(LocalDate today) {
+        this.lastWithdrawnDate = today;
+    }
 }

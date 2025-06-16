@@ -1,0 +1,110 @@
+package com.example.remittance.service;
+
+import com.example.remittance.domain.Account;
+import com.example.remittance.domain.Transaction;
+import com.example.remittance.domain.TransactionType;
+import com.example.remittance.dto.WithdrawRequest;
+import com.example.remittance.repository.AccountRepository;
+import com.example.remittance.repository.TransactionRepository;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
+
+import java.time.LocalDate;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+/*
+ * 인출 테스트
+ * */
+@SpringBootTest
+class RemittanceServiceWithdrawUnitTest {
+
+    private AccountRepository accountRepository;
+    private TransactionRepository transactionRepository;
+    private RemittanceService remittanceService;
+
+    @BeforeEach
+    void setUp() {
+        accountRepository = mock(AccountRepository.class);
+        transactionRepository = mock(TransactionRepository.class);
+        remittanceService = new RemittanceService(accountRepository, transactionRepository);
+    }
+
+    @Test
+    void 출금_성공() {
+        // given
+        String accountNumber = "1234567890";
+        Long initialBalance = 1_000_000L;
+        Long withdrawAmount = 300_000L;
+
+        Account account = Account.builder()
+                .accountNumber(accountNumber)
+                .balance(initialBalance)
+                .dailyWithdrawnAmount(0L)
+                .lastWithdrawnDate(LocalDate.now())
+                .build();
+
+        when(accountRepository.findByAccountNumber(accountNumber))
+                .thenReturn(Optional.of(account));
+
+        WithdrawRequest request = new WithdrawRequest(accountNumber, withdrawAmount);
+
+        // when
+        remittanceService.withdraw(request);
+
+        // then
+        assertEquals(initialBalance - withdrawAmount, account.getBalance());
+        assertEquals(withdrawAmount, account.getDailyWithdrawnAmount());
+
+        verify(accountRepository).save(account);
+        verify(transactionRepository).save(any(Transaction.class));
+    }
+
+    @Test
+    void 출금_실패_잔액부족() {
+        String accountNumber = "1234567890";
+        Account account = Account.builder()
+                .accountNumber(accountNumber)
+                .balance(1000L)
+                .dailyWithdrawnAmount(0L)
+                .lastWithdrawnDate(LocalDate.now())
+                .build();
+
+        when(accountRepository.findByAccountNumber(accountNumber))
+                .thenReturn(Optional.of(account));
+
+        WithdrawRequest request = new WithdrawRequest(accountNumber, 10_000L);
+
+        RuntimeException ex = assertThrows(RuntimeException.class, () -> {
+            remittanceService.withdraw(request);
+        });
+
+        assertTrue(ex.getMessage().contains("잔액이 부족"));
+    }
+
+    @Test
+    void 출금_실패_일일한도초과() {
+        String accountNumber = "1234567890";
+        Account account = Account.builder()
+                .accountNumber(accountNumber)
+                .balance(5_000_000L)
+                .dailyWithdrawnAmount(800_000L)
+                .lastWithdrawnDate(LocalDate.now())
+                .build();
+
+        when(accountRepository.findByAccountNumber(accountNumber))
+                .thenReturn(Optional.of(account));
+
+        WithdrawRequest request = new WithdrawRequest(accountNumber, 300_000L); // 총 110만 → 초과
+
+        RuntimeException ex = assertThrows(RuntimeException.class, () -> {
+            remittanceService.withdraw(request);
+        });
+
+        assertTrue(ex.getMessage().contains("일일 출금 한도"));
+    }
+}

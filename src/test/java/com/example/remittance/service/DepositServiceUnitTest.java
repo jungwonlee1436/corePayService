@@ -2,23 +2,20 @@ package com.example.remittance.service;
 
 import com.example.remittance.domain.Account;
 import com.example.remittance.domain.Transaction;
-import com.example.remittance.domain.TransactionType;
 import com.example.remittance.dto.DepositRequest;
 import com.example.remittance.repository.AccountRepository;
 import com.example.remittance.repository.TransactionRepository;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
 
 //단위테스트
-class RemittanceServiceUnitTest {
+class DepositServiceUnitTest {
 
     private AccountRepository accountRepository;
     private TransactionRepository transactionRepository;
