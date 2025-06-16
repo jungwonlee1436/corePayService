@@ -13,6 +13,14 @@ class TotRemittanceServiceTest {
     @Autowired
     RemittanceService remittanceService;
 
+    //계좌조회
+    @Test
+    void getAccountBalanceTest(){
+        String accountNumber = "1234567890";
+        Long balance = remittanceService.getAccountBalance(accountNumber);
+        assertEquals(0L, balance);
+    }
+
     //입금 통합 테스트
     @Test
     void depositTest(){
