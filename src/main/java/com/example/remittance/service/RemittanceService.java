@@ -4,6 +4,7 @@ import com.example.remittance.domain.Account;
 import com.example.remittance.domain.Transaction;
 import com.example.remittance.domain.TransactionType;
 import com.example.remittance.dto.DepositRequest;
+import com.example.remittance.dto.TransactionResponse;
 import com.example.remittance.dto.TransferRequest;
 import com.example.remittance.dto.WithdrawRequest;
 import com.example.remittance.repository.AccountRepository;
@@ -13,6 +14,8 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
+
 /*
 * 1.계좌정보 조회
 * 2.입금
@@ -161,5 +164,23 @@ public class RemittanceService {
         accountRepository.save(remittor);
         accountRepository.save(addressee);
     }
+
+    //5. 거래내역조회
+    public List<TransactionResponse> getTransactions(String accountNumber) {
+        Account account = accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new RuntimeException("계좌를 찾을 수 없습니다."));
+
+        return transactionRepository.findByAccountOrderByCreatedAtDesc(account)
+                .stream()
+                .map(tx -> new TransactionResponse(
+                        tx.getId(),
+                        tx.getType(),
+                        tx.getAmount(),
+                        tx.getFee(),
+                        tx.getCreatedAt()
+                ))
+                .toList();
+    }
+
 
 }
