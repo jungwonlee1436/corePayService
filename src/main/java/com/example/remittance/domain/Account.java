@@ -25,6 +25,7 @@ public class Account {
     private Long balance = 0L;
 
     // 출금 일일 한도 관련
+    // 일일 출금액
     @Builder.Default
     private Long dailyWithdrawnAmount = 0L;
 
@@ -36,8 +37,8 @@ public class Account {
     }
 
     //출금
-    public void minusBalance(long bal, long amnt) {
-        balance = bal - amnt;
+    public void minusBalance(long amnt) {
+        balance -= amnt;
     }
 
     //출금일 한도 저장

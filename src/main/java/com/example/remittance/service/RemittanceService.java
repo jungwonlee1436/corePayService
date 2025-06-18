@@ -4,6 +4,7 @@ import com.example.remittance.domain.Account;
 import com.example.remittance.domain.Transaction;
 import com.example.remittance.domain.TransactionType;
 import com.example.remittance.dto.DepositRequest;
+import com.example.remittance.dto.TransferRequest;
 import com.example.remittance.dto.WithdrawRequest;
 import com.example.remittance.repository.AccountRepository;
 import com.example.remittance.repository.TransactionRepository;
@@ -77,7 +78,7 @@ public class RemittanceService {
 
         // 출금 처리
         // 잔액 저장
-        account.minusBalance(account.getBalance(), request.amount());
+        account.minusBalance(request.amount());
         //출금 한도 저장
         account.saveDailyWithdrawnAmount(newTotal);
 
@@ -95,4 +96,70 @@ public class RemittanceService {
     }
 
     //4.송금
+    public void transfer(TransferRequest request) {
+        //송금인
+        Account remittor = accountRepository.findByAccountNumber(request.fromAccountNumber())
+                .orElseThrow(() -> new RuntimeException("보내는 계좌를 찾을 수 없습니다."));
+
+        //수취인
+        Account addressee = accountRepository.findByAccountNumber(request.toAccountNumber())
+                .orElseThrow(() -> new RuntimeException("받는 계좌를 찾을 수 없습니다."));
+
+        if (remittor.equals(addressee)) {
+            throw new RuntimeException("자기 계좌로 이체할 수 없습니다.");
+        }
+
+        // 인출 날짜 초기화
+        LocalDate today = LocalDate.now();
+        if (remittor.getLastWithdrawnDate() == null || !remittor.getLastWithdrawnDate().equals(today)) {
+            remittor.saveDailyWithdrawnAmount(0L);
+            remittor.saveLastWithdrawnDate(today);
+        }
+
+        //수수료
+        long fee = Math.round(request.amount() * 0.01);
+        //출금액
+        long totalDeduction = request.amount() + fee;
+
+        if (remittor.getBalance() < totalDeduction) {
+            throw new RuntimeException("잔액이 부족합니다.");
+        }
+
+        long newDailyTotal = remittor.getDailyWithdrawnAmount() + request.amount();
+        if (newDailyTotal > 3_000_000L) {
+            throw new RuntimeException("일일 이체 한도(3,000,000원)를 초과했습니다.");
+        }
+
+        remittor.saveLastWithdrawnDate(today);
+
+        // 출금 처리
+        remittor.minusBalance(totalDeduction);
+        remittor.saveDailyWithdrawnAmount(newDailyTotal);
+
+        // 입금 처리
+        addressee.plusBalance(request.amount());
+
+        // 거래 내역 기록
+        Transaction sendTx = Transaction.builder()
+                .account(remittor)
+                .type(TransactionType.TRANSFER)
+                .amount(request.amount())
+                .fee(fee)
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        Transaction receiveTx = Transaction.builder()
+                .account(addressee)
+                .type(TransactionType.RECEIVE)
+                .amount(request.amount())
+                .fee(0L)
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        transactionRepository.save(sendTx);
+        transactionRepository.save(receiveTx);
+        accountRepository.save(remittor);
+        accountRepository.save(addressee);
+    }
+
 }
