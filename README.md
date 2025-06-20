@@ -17,6 +17,9 @@ docker run -p 8080:8080 remittance-app
 -Docker Compose 사용 (MySQL 포함)
 docker-compose up --build
 
+-만약 docker-compose로 DB 띄워서 통합 테스트하고 싶으면 application.yml의 DB 설정만 MySQL로 변경
+./gradlew test --tests *RemittanceServiceIntegrationTest
+
 3. 테스트 방법
 ./gradlew test
 - 단위 테스트는 Mockito 기반이며, DB 없이도 테스트됩니다.
