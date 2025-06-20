@@ -14,7 +14,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
 
-//단위테스트
+/*
+ * 예금 단위테스트
+ */
 class DepositServiceUnitTest {
 
     private AccountRepository accountRepository;
