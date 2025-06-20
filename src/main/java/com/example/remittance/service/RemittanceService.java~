@@ -202,10 +202,5 @@ public class RemittanceService {
 
     //계좌삭제
     public void deleteAccount(String accountNumber) {
-        Account account = accountRepository.findByAccountNumber(accountNumber)
-                .orElseThrow(() -> new RuntimeException("존재하지 않는 계좌입니다."));
-
-        accountRepository.delete(account);
     }
-
 }
